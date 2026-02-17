@@ -48,7 +48,7 @@ const LoginPage = () => {
       setUser(data)
       if (response.ok) {
         // Use AuthContext login method
-        login(formData.username, data.userId);
+        login(formData.username, data.userId, data.token);
         
         // Redirect to trading platform
         router.push('/webtrading');

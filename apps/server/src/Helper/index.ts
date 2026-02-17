@@ -14,24 +14,32 @@ const liveData:{symbol:string,bid_price:string,ask_price:string}[] = [];
 
 
 export const checkBalance = async (totalPrice: Decimal, userId: UUID) => {
-  const user = users.get(userId) as User;
-  console.log("user",user)
-  const balance = user.balance.get("USDT") as Balance;
-  console.log("balance",balance)
-  if (!balance) return false;
+  const user = users.get(userId);
 
-  const balanceQuantity = new Decimal(balance.quantity);
-  if (balanceQuantity.greaterThanOrEqualTo(totalPrice)) {
-    console.log("Enough balance");
-    return true;
+  if (!user) {
+    throw new Error("User not found in checkBalance");
   }
 
-  return false;
+  const balance = user.balance.get("USDT");
+
+  if (!balance) {
+    throw new Error("USDT balance not found");
+  }
+
+  const balanceQuantity = new Decimal(balance.quantity);
+
+  return balanceQuantity.greaterThanOrEqualTo(totalPrice);
 };
+
 
   
 export const lockBalance = async (totalPrice: Decimal,userId:UUID) => {
-  const user = users.get(userId) as User;
+  const user = users.get(userId) ;
+  
+if (!user) {
+  throw new Error("User not found in lockBalance");
+}
+
   const balance = user.balance.get("USDT") as Balance;
   balance.quantity = balance?.quantity.sub(totalPrice);
   balance.locked =balance?.locked.add(totalPrice);
@@ -221,7 +229,13 @@ export const checkLiquidation = async (trade: any): Promise<Position[]> => {
 
 
 export const getUserOpenPosition = async (userId: UUID) => {
-  const user = users.get(userId) as User;
-  const position = user.positions.filter(position=>position.status==="open");
-  return position;
+  const user = users.get(userId);
+
+  if (!user) {
+    throw new Error("User not found in getUserOpenPosition");
+  }
+
+  return user.positions.filter(
+    position => position.status === "open"
+  );
 };

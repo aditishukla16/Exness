@@ -12,33 +12,38 @@ export const userMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  // 👉 ENV CHECKER — yahi add karna tha
-  console.log("ENV JWTPASSWORD =", JWTPASSWORD);
+  // 1. Get auth header
+  const authHeader = req.headers.authorization;
+  console.log("AUTH HEADER:", authHeader);
 
-  // 1. Token extract from headers
-  const token = req.headers.authorization;
-  console.log("token:", token);
-
-  // 2. Token missing
-  if (!token) {
+  // 2. Missing header
+  if (!authHeader) {
     return res.status(401).json({
       message: "No token provided",
     });
   }
 
+  // 3. Extract token from "Bearer <token>"
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({
+      message: "Malformed token",
+    });
+  }
+
   try {
-    // 3. JWT verify using env key
+    // 4. Verify JWT
     const payload = jwt.verify(token, JWTPASSWORD) as { userId: UUID };
 
-    // 4. Assign user ID to request object
+    // 5. Attach userId to request
     req.id = payload.userId;
 
-    // 5. Continue to next handler
+    // 6. Continue
     next();
   } catch (err) {
-    // 6. Token invalid or expired
     return res.status(401).json({
-      message: "Invalid token",
+      message: "Invalid or expired token",
     });
   }
 };

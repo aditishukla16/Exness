@@ -5,7 +5,7 @@ export interface Tick {
   ts: number;
 }
 
-export interface Candle {  //a structure that stores candle data (open, high, low, close, startTime).
+export interface Candle {
   startTime: number;
   open: number;
   high: number;
@@ -14,7 +14,7 @@ export interface Candle {  //a structure that stores candle data (open, high, lo
   volume?: number;
 }
 
-export type IntervalKey = `${string}_${number}m`;  //just a type that looks like "BTCUSD_1m"
+export type IntervalKey = `${string}_${number}m`;
 
 export interface TickMessage {
   type: "tick";
@@ -44,4 +44,16 @@ export interface ErrorMessage {
   timestamp: number;
 }
 
-export type WSMessage = TickMessage | CandleUpdateMessage | HelloMessage | ErrorMessage;
+/* ADD THIS NEW ONE */
+export interface InfoMessage {
+  type: "info";
+  message: string;
+}
+
+/* UPDATE THE UNION TYPE */
+export type WSMessage =
+  | TickMessage
+  | CandleUpdateMessage
+  | HelloMessage
+  | ErrorMessage
+  | InfoMessage;

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Settings, Plus, Minus, TrendingUp, TrendingDown } from 'lucide-react';
 import { useTickStore } from '../../../app/zustand/store';
@@ -24,7 +24,14 @@ const TradingPanel = ({ selectedTick , className }: TradingPanelProps) => {
   const [leverage, setLeverage] = useState(1);
   const {fetchOpenOrders} = useOpenOrders()
 
-  const token = localStorage.getItem("token");
+ const [token, setToken] = useState<string | null>(null);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  const t = window.localStorage.getItem("token");
+  setToken(t);
+}, []);
+
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
     setLeverage(value);
@@ -39,25 +46,48 @@ const TradingPanel = ({ selectedTick , className }: TradingPanelProps) => {
     setVolume((prev) => Math.max(0.01, parseFloat(prev) - 0.01).toFixed(2));
   };
 
-  const handleOrder = async (orderType:string,volume:string,leverage:number,takeProfit:string,stopLoss:string)=>{
-      const res = await axios.post(`${backendUrl}/order/open`,{
-        side:orderType,
-        volume:volume,
-        leverage:leverage,
-        takeProfit:takeProfit,
-        stopLoss:stopLoss,
-        asset:selectedTick,
-      },{
-        headers:{
-          Authorization:` ${token}`
-        }
-       })
-      console.log(res)
-      if(res.status === 200){
-        console.log("Order Placed Successfully")
-        fetchOpenOrders();  
+const handleOrder = async (orderType: string, volume: string, leverage: number, takeProfit: string, stopLoss: string) => {
+  if (!token) {
+    toast.error("Not authenticated. Please log in to place orders.");
+    console.warn("Cannot place order: token is missing");
+    return;
+  }
+  const clean = token.trim();
+
+  try {
+    const res = await axios.post(
+      `${backendUrl}/order/open`,
+      {
+        side: orderType,
+        volume,
+        leverage,
+        takeProfit,
+        stopLoss,
+        asset: selectedTick,
+      },
+      {
+        headers: { Authorization: `Bearer ${clean}` },
       }
- }
+    );
+
+    if (res.status === 200) {
+      toast.success("Order placed");
+      fetchOpenOrders(); // refresh orders after success
+    } else {
+      toast.error("Order failed");
+    }
+  } catch (err: any) {
+    console.error("Order placement error", err?.response ?? err);
+    if (err?.response?.status === 401) {
+      if (typeof window !== "undefined") window.localStorage.removeItem("token");
+      toast.error("Session expired. Please login again.");
+    } else {
+      toast.error(err?.response?.data?.message ?? "Order placement failed");
+    }
+  }
+};
+
+
 
 
 

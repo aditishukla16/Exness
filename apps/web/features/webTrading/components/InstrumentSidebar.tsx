@@ -14,7 +14,13 @@ const InstrumentSidebar = ({ setSelectedTick, className }: InstrumentSidebarProp
 
   const globalTick = useGlobalTickStore((state) => state.gloabalTick);
   const candleTick = useTickStore((state) => state.candleTick);
+  useEffect(() => {
+    const symbols = Object.keys(globalTick);
 
+    if (symbols.length > 0) {
+      setSelectedTick(symbols[0]!);
+    }
+  }, [globalTick, setSelectedTick]);
   return (
     <div className="w-80 bg-[#141920] border-r border-[#2a3441] flex flex-col h-full">
 

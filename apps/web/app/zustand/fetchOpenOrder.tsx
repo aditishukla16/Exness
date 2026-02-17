@@ -3,11 +3,10 @@
 import { create } from "zustand";
 import axios from "axios";
 import { backendUrl } from "../../lib/url";
-import { UUID } from "crypto";
 
 export interface Position {
-  orderId: UUID;
-  userId: UUID;
+  orderId: string;       // client-side ID shape -> use string
+  userId: string;
   asset: string;
   side: "Buy" | "Sell";
   leverage: string;
@@ -37,42 +36,41 @@ export const useOpenOrders = create<OrderStore>((set, get) => ({
   setOpenOrders: (orders: Position[]) => set({ openOrders: orders }),
 
   fetchOpenOrders: async () => {
-    try {
-      // Next.js safety: server side pe ye function run ho to skip
-      if (typeof window === "undefined") return;
+  try {
+    if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.warn("fetchOpenOrders: No token found, skipping request");
-        return;
-      }
-
-      console.log("Fetching Open Orders");
-      console.log("backendUrl:", backendUrl);
-      console.log("token (first 10 chars):", token.slice(0, 10), "...");
-
-      const res = await axios.get<GetOpenOrdersResponse>(
-        `${backendUrl}/order/getOpenOrder`,
-        {
-          headers: {
-            // yahi format zyada common hai:
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const ordersArray = res.data.position ?? [];
-      console.log("Fetched Open Orders:", ordersArray);
-
-      set({ openOrders: ordersArray });
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        console.error("Failed to fetch open orders – status:", err.response?.status);
-        console.error("Failed to fetch open orders – data:", err.response?.data);
-      } else {
-        console.error("Failed to fetch open orders – unknown error:", err);
-      }
+    const raw = window.localStorage.getItem("token");
+    if (!raw) {
+      console.warn("fetchOpenOrders: No token found, skipping request");
+      return;
     }
-  },
+    const token = raw.trim();
+
+    const res = await axios.get<GetOpenOrdersResponse>(
+      `${backendUrl}/order/getOpenOrder`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const ordersArray = res.data.position ?? [];
+    set({ openOrders: ordersArray });
+  } catch (err: any) {
+    if (axios.isAxiosError(err)) {
+      console.error("Failed to fetch open orders – status:", err.response?.status);
+      console.error("Failed to fetch open orders – data:", err.response?.data);
+
+      //if (err.response?.status === 401) {
+        // token invalid -> remove it and surface the issue
+        //if (typeof window !== "undefined") window.localStorage.removeItem("token");
+        //console.warn("Unauthorized — token cleared. Please login again.");
+      //}
+    } else {
+      console.error("Failed to fetch open orders – unknown error:", err);
+    }
+  }
+},
+
 }));

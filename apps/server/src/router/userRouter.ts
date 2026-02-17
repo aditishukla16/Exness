@@ -26,7 +26,7 @@ router.post("/signup", async(req: Request, res: Response) => {
         const userId = randomUUID();
         const userPasswrod = await bcrypt.hash(password,10);
         const newUser: User = {
-            
+            id: userId,
             username,
             password:userPasswrod,
             balance: new Map<string, Balance>([
@@ -45,7 +45,7 @@ router.post("/signup", async(req: Request, res: Response) => {
         };
 
         users.set(userId, newUser);
-        const token = jwt.sign({userId},JWTPASSWORD);
+        const token = jwt.sign({userId:newUser.id},JWTPASSWORD);
 
         res.status(200).json({
             message: "User created successfully",
@@ -88,7 +88,8 @@ router.post("/signin",async(req:Request,res:Response)=>{
              const isPasswordCorrect = await bcrypt.compare(password,user.password);
              
              if(isPasswordCorrect){
-                 const token = jwt.sign({userId:user.username},JWTPASSWORD);
+             const token = jwt.sign({ userId: user.id }, JWTPASSWORD);
+
                  res.status(200).json({
                      message:"Success",
                      userId:getByValue(users,user),
@@ -120,24 +121,21 @@ router.post("/signin",async(req:Request,res:Response)=>{
         }
         
 })
+// Quick test endpoint: no auth, returns dummy balance
+router.get("/balance", (req: Request, res: Response) => {
+  try {
+    return res.json({
+      ok: true,
+      balance: { asset: "USDT", quantity: "100000.00", locked: "0" }
+    });
+  } catch (err) {
+    console.error("GET /user/balance error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 export const userRouter = router
 
 
 
-
-
-
-
-///explaination of the code above
-//newUser.balance.entries() → Gives an iterator over key-value pairs in the map.
-//Example entry: ["USDT", { asset: "USDT", quantity: Decimal(...), locked: Decimal(...) }]
-//Array.from(...) → Converts the iterator into an array:
-//[
-//     ["USDT", { asset: "USDT", quantity: Decimal(...), locked: Decimal(...) }]
-// ]
-// map(([asset, balance]) => ({ ... })) →
-// For every entry in the array:
-// Extract asset (key, e.g., "USDT").
-// Extract balance (value object).
-// Return a new object:

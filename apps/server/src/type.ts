@@ -24,13 +24,15 @@ import { UUID } from "crypto";
 import Decimal from "decimal.js";
 import z from "zod";
 export type User = {
-  username:string;
+  id: string;                // 🔑 identity
+  username: string;
   password: string;
-  balance: Map<string, Balance>; // key = asset symbol value = balance
+  balance: Map<string, Balance>;
   positions: Position[];
   orders: Order[];
   transactions: Transaction[];
 };
+
 
 export type Instrument = {
   id: number;
